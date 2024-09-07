@@ -10,26 +10,31 @@ start:
    mov sp, 0x7C00
    sti
 
+   xor bx, bx
    xor dx, dx
    mov ah, 0x02
    int 0x10
 
-   mov ax, 0x0A00
-   mov bh, 0x00
+   mov ah, 0x0A
    mov cx, 0x07D0
    int 0x10
 
-   mov si, board
-   call print
-
-   xor ax, ax
-   mov [ptr_cursor], ax
-   mov [ptr_O_marks], ax
-   mov [ptr_X_marks], ax
+   mov [ptr_cursor], dx
+   mov [ptr_O_marks], dx
+   mov [ptr_X_marks], dx
    
    mov al, 0x4F
    mov [ptr_player], al
-   jmp put_cursor
+   
+   mov si, board
+   call print
+
+put_cursor:
+   mov [ptr_cursor], dx
+   mov ah, 0x02
+   xor bx, bx
+   int 0x10
+
 get_arrow_key:
    mov ah, 0
    int 0x16
@@ -104,7 +109,6 @@ fix_overflow_col:
    
    mov dl, 0
    jmp put_cursor
-
 print_mark:
    mov al, [ptr_player]
    mov ah, 0x0E
@@ -126,17 +130,10 @@ print_mark:
    or bx, [ptr_X_marks]
    cmp bx, 0x01FF
    je tie_exit
-
-put_cursor:
-   mov [ptr_cursor], dx
-   mov bx, 0x0000
-   mov ax, 0x0200
-   int 0x10
-
-   jmp get_arrow_key
+   
+   jmp put_cursor
 
 win_exit:
-   mov bh, 0x00
    mov ah, 0x02
    mov dx, 0x0400
    int 0x10
@@ -145,21 +142,24 @@ win_exit:
    mov ah, 0x0E
    int 0x10
    
-   mov si, win_message
+   mov si, win_msg
    call print
    jmp exit
 
 tie_exit:
-   mov bh, 0x00
    mov ah, 0x02
    mov dx, 0x0400
+   xor bx, bx
    int 0x10
 
-   mov si, tie_message
+   mov si, tie_msg
    call print
 
    ;jmp exit
 exit:
+   mov si, brk_or_ctn_msg
+   call print
+
    mov ah, 0
    int 0x16
 
@@ -198,7 +198,9 @@ ptr_cursor dw 0x0000
 ptr_player db 0x4F
 board db " | | ", 0xA, 0xD, " | | ", 0xA, 0xD, " | | ", 0
 win_boards dw 0x0007, 0x0038, 0x01C0, 0x0049, 0x0092, 0x0124, 0x0111, 0x0054
-win_message db " won!!!", 0
-tie_message db "It was a tie!", 0
+; how_to_play_msg db "ARROWS for navegation, SPACE for ticking", 0
+win_msg db " won!!!", 0
+tie_msg db "It was a tie!", 0
+brk_or_ctn_msg db 0xA, 0xD, "Prees ESCAPE to poweroff", 0xA, 0xD, "Prees another key to play again...", 0
 times 510 - ($ - $$) db 0
 dw 0xAA55
